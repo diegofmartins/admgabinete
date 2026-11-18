@@ -1,6 +1,13 @@
 import { getApps, initializeApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import {
+  GoogleAuthProvider,
+  getAuth,
+  signInWithPopup,
+  type Auth,
+  type UserCredential,
+} from 'firebase/auth';
 
+import { DOMINIO_INSTITUCIONAL } from '../dominio';
 import type { PapelUsuario } from '../types';
 
 /** Converte a custom claim `role`/`papel` do Firebase no papel usado pela aplicação. */
@@ -48,4 +55,12 @@ export async function obterTokenFirebase(): Promise<string | null> {
     console.warn('[Firebase] Não foi possível obter o ID token:', erro);
     return null;
   }
+}
+
+/** Abre o popup do Google restringindo a escolha ao domínio institucional. */
+export function entrarComGoogle(auth: Auth): Promise<UserCredential> {
+  const provedor = new GoogleAuthProvider();
+  // O Google espera o domínio sem o '@' (ex.: cmc.pr.gov.br).
+  provedor.setCustomParameters({ hd: DOMINIO_INSTITUCIONAL.slice(1) });
+  return signInWithPopup(auth, provedor);
 }
