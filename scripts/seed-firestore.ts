@@ -66,7 +66,9 @@ export async function concederAdmin(
   let usuario: { uid: string };
   try {
     usuario = await auth.getUserByEmail(normalizado);
-  } catch {
+  } catch (erro) {
+    const codigo = (erro as { code?: string } | null)?.code;
+    if (codigo !== 'auth/user-not-found') throw erro;
     throw new Error(
       `Usuário ${normalizado} ainda não existe no Firebase Auth. ` +
         'Entre uma vez com o Google e execute o comando novamente.',

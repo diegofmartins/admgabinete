@@ -85,7 +85,7 @@ acidente. No dev sem credenciais, `npm run api` continua subindo com
 | Build Command | `npm ci && npm run build` |
 | Start Command | `npm run api` |
 | Node Version | `24.22.1` (via `.node-version`) |
-| Health Check Path | `/api/gabinetes` (com token inválido devolve 401, mas responde) |
+| Health Check Path | `/` (serve `index.html` com 200; nunca use `/api/*`, que exige token e devolve 401 — o Render marca 4xx como falha) |
 
 ```bash
 npm ci
@@ -139,6 +139,11 @@ ignorado pelo Git.
    Se o usuário ainda não tiver entrado, o script falha com a instrução
    “Entre uma vez com o Google e execute o comando novamente” — por isso a ordem
    do passo 3 importa (`getUserByEmail` não encontra usuário inexistente).
+
+   **Depois de conceder a claim, saia e entre novamente** no `gabinete-test`
+   (e depois no `gabinete-prod`). O token emitido no passo 3 não traz a claim
+   nova: sem esse re-login o Painel Admin continua escondido. Alternativa
+   equivalente: recarregar a página já logada, desde que o SDK renove o token.
 5. Repita os passos 2–4 com `FIRESTORE_PREFIX=prod` para a produção.
 
 ## 7. Espelho opcional no GitHub Pages

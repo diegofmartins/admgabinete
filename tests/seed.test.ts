@@ -103,12 +103,26 @@ test('concederAdmin: promove usuário existente com claim role=admin', async () 
 
 test('concederAdmin: usuário ainda não entrou com Google gera instrução clara', async () => {
   const fakeAuth: AdminAuthLike = {
-    async getUserByEmail() { throw new Error('auth/user-not-found'); },
+    async getUserByEmail() {
+      throw Object.assign(new Error('auth/user-not-found'), { code: 'auth/user-not-found' });
+    },
     async setCustomUserClaims() { throw new Error('não deveria ser chamado'); },
   };
   await assert.rejects(
     concederAdmin(fakeAuth, 'diego.martins@cmc.pr.gov.br'),
     /Entre uma vez com o Google/,
+  );
+});
+
+test('concederAdmin: erro que não é user-not-found é propagado com seu código', async () => {
+  const erroOriginal = Object.assign(new Error('permission-denied'), { code: 'auth/insufficient-permission' });
+  const fakeAuth: AdminAuthLike = {
+    async getUserByEmail() { throw erroOriginal; },
+    async setCustomUserClaims() { throw new Error('não deveria ser chamado'); },
+  };
+  await assert.rejects(
+    concederAdmin(fakeAuth, 'diego.martins@cmc.pr.gov.br'),
+    (erro: unknown) => erro === erroOriginal,
   );
 });
 
