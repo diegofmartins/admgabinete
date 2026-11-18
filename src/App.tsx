@@ -4,14 +4,14 @@ import {
   getAuth,
   getIdTokenResult,
   onAuthStateChanged,
-  signInWithEmailAndPassword,
   signOut,
   type User,
 } from 'firebase/auth';
+import { emailInstitucionalValido } from './dominio';
 import { Gabinete, UsuarioPerfil, GABINETES_PADRAO } from './types';
 import { api } from './services/api';
 import { deveAplicarUsuarioAuth } from './services/authSequencia';
-import { mapearPapel } from './services/firebase';
+import { entrarComGoogle, mapearPapel } from './services/firebase';
 import { LoginView } from './components/LoginView';
 import { CabecalhoInstitucional } from './components/CabecalhoInstitucional';
 import { InicioView } from './components/InicioView';
@@ -27,7 +27,6 @@ type AbaAtiva = 'inicio' | 'gabinete' | 'admissao' | 'exoneracao' | 'declaracao'
 function AppContent() {
   const [usuarioAtual, setUsuarioAtual] = useState<any>(null);
   const [perfilUsuario, setPerfilUsuario] = useState<UsuarioPerfil | null>(null);
-  const [erroLogin, setErroLogin] = useState<string | undefined>(undefined);
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('inicio');
 
   const gabinetesIniciais: Gabinete[] = GABINETES_PADRAO.map((g, i) => ({ id: 'gab_' + i, ...g }));
@@ -90,6 +89,15 @@ function AppContent() {
         return;
       }
 
+      if (!emailInstitucionalValido(user.email)) {
+        // Conta pessoal: encerra a sessão sem aviso, antes de buscar claims ou perfil.
+        authSeqRef.current += 1;
+        await signOut(getAuth());
+        setUsuarioAtual(null);
+        setPerfilUsuario(null);
+        return;
+      }
+
       try {
         const { claims } = await getIdTokenResult(user);
         // Logout ou troca de usuário durante o await invalida este callback.
@@ -127,29 +135,21 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onLogin = async (email: string, senha: string): Promise<void> => {
-    setErroLogin(undefined);
+  const onLogin = async (): Promise<void> => {
     if (!firebaseIniciado()) {
-      setErroLogin('Autenticação não configurada. Contate o administrador do sistema.');
+      console.warn('[Auth] Firebase não configurado; login indisponível.');
       return;
     }
-
     try {
-      await signInWithEmailAndPassword(getAuth(), email, senha);
-    } catch (erro: any) {
-      const codigo = erro?.code as string | undefined;
-      if (
-        codigo === 'auth/invalid-credential' ||
-        codigo === 'auth/wrong-password' ||
-        codigo === 'auth/user-not-found' ||
-        codigo === 'auth/invalid-email'
-      ) {
-        setErroLogin('E-mail ou senha inválidos.');
-      } else if (codigo === 'auth/too-many-requests') {
-        setErroLogin('Muitas tentativas. Tente novamente mais tarde.');
-      } else {
-        setErroLogin('Não foi possível entrar. Tente novamente.');
+      const credencial = await entrarComGoogle(getAuth());
+      if (!emailInstitucionalValido(credencial.user.email)) {
+        authSeqRef.current += 1;
+        await signOut(getAuth());
+        setUsuarioAtual(null);
+        setPerfilUsuario(null);
       }
+    } catch {
+      // Sem mensagem na tela: popup cancelado ou falha de rede apenas retorna.
     }
   };
 
@@ -181,7 +181,7 @@ function AppContent() {
   }
 
   if (!usuarioAtual) {
-    return <LoginView onLogin={onLogin} erro={erroLogin} />;
+    return <LoginView onLogin={onLogin} />;
   }
 
   return (

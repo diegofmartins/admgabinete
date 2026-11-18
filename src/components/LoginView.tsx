@@ -1,24 +1,19 @@
 import React, { useState } from 'react';
-import { Shield, LogIn, Mail, LockKeyhole } from 'lucide-react';
 
 interface LoginViewProps {
-  onLogin: (email: string, senha: string) => Promise<void>;
-  erro?: string;
+  onLogin: () => Promise<void>;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ onLogin, erro }) => {
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [enviando, setEnviando] = useState(false);
 
-  const handleSubmit = async (evento: React.FormEvent<HTMLFormElement>) => {
-    evento.preventDefault();
+  const handleClick = async () => {
     if (enviando) return;
     setEnviando(true);
     try {
-      await onLogin(email.trim(), senha);
+      await onLogin();
     } catch {
-      // onLogin traduz falhas em mensagem amigável; evita rejeição não tratada.
+      // Tela sem mensagens: qualquer falha apenas mantém o usuário aqui.
     } finally {
       setEnviando(false);
     }
@@ -47,72 +42,27 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, erro }) => {
         </div>
       </header>
 
-      {/* Centro: Card de Acesso Restrito */}
+      {/* Centro: acesso institucional */}
       <main className="max-w-md mx-auto px-4 py-16 w-full">
-        <div className="bg-white border border-[#D9DEDB] rounded-xl p-8 shadow-sm space-y-6 text-center">
-          <div className="w-16 h-16 bg-brand/10 text-brand-ink rounded-full flex items-center justify-center mx-auto shadow-inner">
-            <Shield className="w-8 h-8" />
-          </div>
+        <div className="bg-white border border-[#D9DEDB] rounded-xl p-8 shadow-sm space-y-8 text-center">
+          <h2 className="text-xl font-bold text-[#182528]">
+            Acesse com sua conta institucional
+          </h2>
 
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-[#182528]">Acesso Restrito</h2>
-            <p className="text-xs sm:text-sm text-slate-600">
-              Informe seu e-mail e senha institucionais para acessar o sistema.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 text-left">
-            <div className="space-y-1.5">
-              <label htmlFor="login-email" className="block text-xs font-semibold text-[#182528]">E-mail</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  id="login-email"
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu.email@cmc.pr.gov.br"
-                  className="w-full h-11 pl-10 pr-3 border border-[#D9DEDB] rounded-lg text-sm text-[#182528] placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="login-senha" className="block text-xs font-semibold text-[#182528]">Senha</label>
-              <div className="relative">
-                <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  id="login-senha"
-                  name="senha"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-11 pl-10 pr-3 border border-[#D9DEDB] rounded-lg text-sm text-[#182528] placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand"
-                />
-              </div>
-            </div>
-
-            {erro && (
-              <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                {erro}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full h-12 bg-brand-fill text-white font-semibold rounded-lg hover:bg-brand-deep transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow text-sm sm:text-base cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <LogIn className="w-5 h-5" />
-              <span>{enviando ? 'Entrando...' : 'Entrar'}</span>
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={handleClick}
+            disabled={enviando}
+            className="w-full h-12 bg-white border border-[#D9DEDB] text-[#182528] font-semibold rounded-lg hover:bg-[#F7F8F7] transition-all flex items-center justify-center gap-3 shadow-sm text-sm sm:text-base cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            <span>Entrar com Google</span>
+          </button>
         </div>
       </main>
 
