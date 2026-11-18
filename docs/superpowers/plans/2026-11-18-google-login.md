@@ -27,7 +27,7 @@
 
 ---
 
-## Tarefa 1 — Helper do domínio institucional (base compartilhada)
+### Task 1: Helper do domínio institucional (base compartilhada)
 
 **Arquivos:** `src/dominio.ts` (novo), `tests/dominio.test.ts` (novo).
 
@@ -100,7 +100,7 @@ git add src/dominio.ts tests/dominio.test.ts && git commit -m "feat: helper de d
 
 ---
 
-## Tarefa 2 — Bloqueio no backend (a defesa real)
+### Task 2: Bloqueio no backend (a defesa real)
 
 **Arquivos:** `src/server/auth.ts` (editar), `src/server/app.ts` (editar),
 `tests/auth-api.test.ts` (editar).
@@ -217,7 +217,7 @@ git add src/server/auth.ts src/server/app.ts tests/auth-api.test.ts && git commi
 
 ---
 
-## Tarefa 3 — `entrarComGoogle()` no cliente Firebase
+### Task 3: `entrarComGoogle()` no cliente Firebase
 
 **Arquivos:** `src/services/firebase.ts` (editar), `tests/papeis.test.ts` (editar
 somente se o lint reclamar — não deve).
@@ -264,7 +264,7 @@ git add src/services/firebase.ts && git commit -m "feat: entrarComGoogle com fil
 
 ---
 
-## Tarefa 4 — Tela de login mínima
+### Task 4: Tela de login mínima
 
 **Arquivos:** `src/components/LoginView.tsx` (editar — substituir o conteúdo).
 
@@ -355,7 +355,7 @@ git add src/components/LoginView.tsx && git commit -m "feat: tela de login so co
 
 ---
 
-## Tarefa 5 — `App.tsx`: login, observer e checagem silenciosa
+### Task 5: `App.tsx`: login, observer e checagem silenciosa
 
 **Arquivos:** `src/App.tsx` (editar).
 
@@ -424,7 +424,7 @@ git add src/App.tsx && git commit -m "feat: App usa Google e descarta contas pes
 
 ---
 
-## Tarefa 6 — Administrador por e-mail (sem senha)
+### Task 6: Administrador por e-mail (sem senha)
 
 **Arquivos:** `scripts/seed-firestore.ts` (editar), `tests/seed.test.ts` (editar),
 `.env.example` (editar).
@@ -550,7 +550,7 @@ git add scripts/seed-firestore.ts tests/seed.test.ts .env.example && git commit 
 
 ---
 
-## Tarefa 7 — Configuração do projeto novo e documentação
+### Task 7: Configuração do projeto novo e documentação
 
 **Arquivos:** `.env.example` (editar), `docs/deploy.md` (editar),
 `firebase-applet-config.json` (**não editar** — não é lido pela aplicação).
@@ -605,7 +605,7 @@ git add .env.example docs/deploy.md && git commit -m "docs: deploy com projeto a
 
 ---
 
-## Tarefa 8 — Verificação final e entrega
+### Task 8: Verificação final e entrega
 
 ### Comandos (todos precisam passar)
 
