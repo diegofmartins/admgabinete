@@ -11,3 +11,6 @@ data/
 firebase-service-account.json
 # Registro interno de auditoria do planejamento (snapshots/diffs) — fica só no computador.
 .superpowers/
+
+# Worktrees locais (nao versionar)
+.worktrees/
