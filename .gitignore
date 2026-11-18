@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+coverage/
+data/
+.DS_Store
+*.log
+.env*
+!.env.example
+# Chave da conta de serviço do Firebase (segredo — nunca versionar).
+firebase-service-account.json
+# Registro interno de auditoria do planejamento (snapshots/diffs) — fica só no computador.
+.superpowers/

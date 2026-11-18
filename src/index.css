@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/* Evita que artefatos de build e documentos com exemplos de código alimentem o scan de classes. */
+@source not "../dist";
+@source not "../docs";
+
+/*
+  Paleta institucional — tons de verde/teal da Câmara Municipal de Curitiba.
+  Tom base solicitado: #3E8A8E.
+  Os tons vizinhos existem para manter legibilidade (AA) em texto pequeno e
+  em preenchimentos com texto branco, sem alterar a identidade da cor.
+*/
+@theme {
+  /* tom base: bordas, anéis de foco, realces e ícones decorativos */
+  --color-brand: #3E8A8E;
+  /* preenchimentos sólidos com texto branco (contraste 4,6:1) */
+  --color-brand-fill: #377F83;
+  /* texto verde sobre fundo claro (contraste 5,1:1) */
+  --color-brand-ink: #35787B;
+  /* hover/pressed de botões */
+  --color-brand-deep: #2A6164;
+  /* fundos suaves de confirmação */
+  --color-brand-tint: #EAF3F3;
+}
+
+@layer base {
+  /* Controles nativos (radio/checkbox) acompanham o verde institucional. */
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  progress {
+    accent-color: var(--color-brand-fill);
+  }
+}
+
+/*
+  Halo de foco único para todos os campos de texto, seleção e data.
+  Regra fora das camadas para prevalecer sobre os utilitários do Tailwind.
+*/
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(62, 138, 142, 0.18);
+}
+
+/* CPF inválido preserva o destaque vermelho também ao receber foco. */
+input.border-red-500:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
