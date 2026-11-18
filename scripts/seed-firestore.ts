@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { emailInstitucionalValido } from '../src/dominio';
 import type { Banco, FirestoreLike, Repositorio } from '../src/server/repository';
 import { repositorioFirestore } from '../src/server/repositorio-firestore';
 
@@ -16,11 +17,11 @@ export const COLECOES = [
 ] as const;
 
 /**
- * Superfície mínima do Firebase Admin Auth usada para criar o administrador.
- * `AuthLike` (verificação de token) não expõe createUser/claims — daí a interface própria.
+ * Superfície mínima do Firebase Admin Auth usada para promover o administrador.
+ * `AuthLike` (verificação de token) não expõe getUserByEmail/claims — daí a interface própria.
  */
 export interface AdminAuthLike {
-  createUser(dados: { email: string; password: string }): Promise<{ uid: string }>;
+  getUserByEmail(email: string): Promise<{ uid: string }>;
   setCustomUserClaims(uid: string, claims: Record<string, unknown>): Promise<void>;
 }
 
@@ -53,18 +54,26 @@ export async function seed(
   return { escritos };
 }
 
-/** Cria o usuário administrador com a claim `role: 'admin'`. */
-export async function criarAdmin(
+/** Concede claim `role: 'admin'` a um usuário que já entrou com o Google. */
+export async function concederAdmin(
   auth: AdminAuthLike,
   email: string,
-  senha: string,
 ): Promise<void> {
-  if (!email?.trim() || !senha) {
-    throw new Error('SEED_ADMIN_EMAIL e SEED_ADMIN_SENHA devem ser informados (nunca hardcoded).');
+  const normalizado = email?.trim().toLowerCase();
+  if (!emailInstitucionalValido(normalizado)) {
+    throw new Error('O administrador deve usar um e-mail @cmc.pr.gov.br.');
   }
-  const usuario = await auth.createUser({ email, password: senha });
+  let usuario: { uid: string };
+  try {
+    usuario = await auth.getUserByEmail(normalizado);
+  } catch {
+    throw new Error(
+      `Usuário ${normalizado} ainda não existe no Firebase Auth. ` +
+        'Entre uma vez com o Google e execute o comando novamente.',
+    );
+  }
   await auth.setCustomUserClaims(usuario.uid, { role: 'admin' });
-  console.log(`[seed] administrador criado: ${email}`);
+  console.log(`[seed] administrador concedido: ${normalizado}`);
 }
 
 async function main(): Promise<void> {
@@ -103,12 +112,11 @@ async function main(): Promise<void> {
   await seed(repositorio, bancoLocal, prefixo);
 
   const email = process.env.SEED_ADMIN_EMAIL;
-  const senha = process.env.SEED_ADMIN_SENHA;
-  if (email && senha) {
+  if (email) {
     const auth = (admin as unknown as { auth: (app?: unknown) => AdminAuthLike }).auth(app);
-    await criarAdmin(auth, email, senha);
+    await concederAdmin(auth, email);
   } else {
-    console.log('[seed] SEED_ADMIN_EMAIL/SEED_ADMIN_SENHA ausentes: administrador não criado.');
+    console.log('[seed] SEED_ADMIN_EMAIL ausente: administrador não concedido.');
   }
 }
 

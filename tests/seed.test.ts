@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { Banco } from '../src/server/repository';
 import { repositorioFirestore } from '../src/server/repositorio-firestore';
-import { criarAdmin, seed, type AdminAuthLike } from '../scripts/seed-firestore';
+import { concederAdmin, seed, type AdminAuthLike } from '../scripts/seed-firestore';
 import { fakeFirestore } from './helpers/firestore-fake';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -19,7 +19,6 @@ const COLECOES = [
   'exoneracoes',
   'declaracoes',
 ] as const;
-const SENHA_SENTINELA = 'senha-vinda-de-env';
 
 function carregarBanco(): Banco {
   return JSON.parse(fs.readFileSync(path.join(RAIZ, 'data', 'db.json'), 'utf8')) as Banco;
@@ -82,38 +81,50 @@ test('seed(repo, bancoLocal, "test"): ids originais são campo id e ID do docume
   assert.equal((await fake.collection('test_gabinetes').doc('gab_0').get()).exists, true);
 });
 
-test('criarAdmin(fakeAuth, email, senha): claim role=admin e senha do env não versionada', async () => {
+test('concederAdmin: promove usuário existente com claim role=admin', async () => {
   const chamadas: Array<Record<string, unknown>> = [];
   const fakeAuth: AdminAuthLike = {
-    async createUser({ email, password }) {
-      chamadas.push({ metodo: 'createUser', email, password });
-      return { uid: 'uid-admin-criado' };
+    async getUserByEmail(email) {
+      chamadas.push({ metodo: 'getUserByEmail', email });
+      return { uid: 'uid-admin' };
     },
     async setCustomUserClaims(uid, claims) {
       chamadas.push({ metodo: 'setCustomUserClaims', uid, claims });
     },
   };
 
-  await criarAdmin(fakeAuth, 'admin@gabinete.test', SENHA_SENTINELA);
+  await concederAdmin(fakeAuth, 'diego.martins@cmc.pr.gov.br');
 
-  assert.deepEqual(chamadas[0], {
-    metodo: 'createUser',
-    email: 'admin@gabinete.test',
-    password: SENHA_SENTINELA,
-  });
-  assert.deepEqual(chamadas[1], {
-    metodo: 'setCustomUserClaims',
-    uid: 'uid-admin-criado',
-    claims: { role: 'admin' },
-  });
+  assert.deepEqual(chamadas, [
+    { metodo: 'getUserByEmail', email: 'diego.martins@cmc.pr.gov.br' },
+    { metodo: 'setCustomUserClaims', uid: 'uid-admin', claims: { role: 'admin' } },
+  ]);
+});
 
-  const grep = spawnSync('grep', ['-R', '-F', '-l', SENHA_SENTINELA, 'src', 'scripts'], {
-    cwd: RAIZ,
-    encoding: 'utf8',
-  });
-  assert.equal(
-    grep.status,
-    1,
-    `senha vazou em arquivos versionados: ${grep.stdout.trim() || grep.stderr.trim()}`,
+test('concederAdmin: usuário ainda não entrou com Google gera instrução clara', async () => {
+  const fakeAuth: AdminAuthLike = {
+    async getUserByEmail() { throw new Error('auth/user-not-found'); },
+    async setCustomUserClaims() { throw new Error('não deveria ser chamado'); },
+  };
+  await assert.rejects(
+    concederAdmin(fakeAuth, 'diego.martins@cmc.pr.gov.br'),
+    /Entre uma vez com o Google/,
   );
+});
+
+test('concederAdmin: recusa e-mail fora do domínio institucional', async () => {
+  const fakeAuth: AdminAuthLike = {
+    async getUserByEmail() { return { uid: 'x' }; },
+    async setCustomUserClaims() {},
+  };
+  await assert.rejects(concederAdmin(fakeAuth, 'admin@gmail.com'), /@cmc\.pr\.gov\.br/);
+});
+
+test('código versionado não contém senha de administrador', () => {
+  for (const termo of ['SEED_ADMIN_SENHA', 'createUser(']) {
+    const grep = spawnSync('grep', ['-R', '-F', '-l', termo, 'src', 'scripts'], {
+      cwd: RAIZ, encoding: 'utf8',
+    });
+    assert.equal(grep.status, 1, `${termo} vazou em src/ ou scripts/`);
+  }
 });
