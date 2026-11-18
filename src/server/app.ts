@@ -7,7 +7,7 @@ import express, {
 } from 'express';
 import path from 'path';
 import type { Repositorio } from './repository';
-import { semAutenticacao, type VerificadorToken } from './auth';
+import { ErroAcessoRestrito, semAutenticacao, type VerificadorToken } from './auth';
 
 const TIPOS_GABINETE = ['vereador', 'lideranca', 'presidencia', 'secretaria'];
 
@@ -42,7 +42,10 @@ export function criarApp(repositorio: Repositorio, verificadorToken: Verificador
       const usuario = await verificadorToken(token);
       (req as any).usuario = usuario;
       return next();
-    } catch {
+    } catch (erro) {
+      if (erro instanceof ErroAcessoRestrito) {
+        return res.status(403).json({ erro: 'Acesso restrito.' });
+      }
       return res.status(401).json({ erro: 'Não autenticado.' });
     }
   });

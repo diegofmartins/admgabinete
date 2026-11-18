@@ -8,7 +8,7 @@ import path from 'node:path';
 
 import { criarApp } from '../src/server/app';
 import { repositorioMemoria } from '../src/server/repository';
-import { verificadorFirebase, type AuthLike } from '../src/server/auth';
+import { ErroAcessoRestrito, verificadorFirebase, type AuthLike } from '../src/server/auth';
 
 const verificadorTeste = async (token: string) => {
   if (token !== 'token-valido') {
@@ -73,9 +73,50 @@ test('auth na API /api/* com verificador customizado', async (t) => {
 
   await t.test('verificadorFirebase mapeia uid e role', async () => {
     const fakeAuth: AuthLike = {
-      verifyIdToken: async () => ({ uid: 'u1', role: 'admin' }),
+      verifyIdToken: async () => ({
+        uid: 'u1',
+        role: 'admin',
+        email: 'diego.martins@cmc.pr.gov.br',
+        email_verified: true,
+      }),
     };
     const usuario = await verificadorFirebase(fakeAuth)('qualquer-token');
     assert.deepEqual(usuario, { uid: 'u1', papel: 'admin' });
+  });
+
+  await t.test('verificadorFirebase recusa e-mail pessoal', async () => {
+    const fakeAuth: AuthLike = {
+      verifyIdToken: async () => ({
+        uid: 'u2', email: 'pessoal@gmail.com', email_verified: true,
+      }),
+    };
+    await assert.rejects(verificadorFirebase(fakeAuth)('token'), ErroAcessoRestrito);
+  });
+
+  await t.test('verificadorFirebase recusa e-mail não verificado', async () => {
+    const fakeAuth: AuthLike = {
+      verifyIdToken: async () => ({
+        uid: 'u3', email: 'diego.martins@cmc.pr.gov.br', email_verified: false,
+      }),
+    };
+    await assert.rejects(verificadorFirebase(fakeAuth)('token'), ErroAcessoRestrito);
+  });
+
+  await t.test('API devolve 403 para token institucional recusado', async () => {
+    const app403 = criarApp(repo, async () => { throw new ErroAcessoRestrito(); });
+    const srv403 = app403.listen(0);
+    await once(srv403, 'listening');
+    try {
+      const { port } = srv403.address() as AddressInfo;
+      const res = await fetch(`http://127.0.0.1:${port}/api/gabinetes`, {
+        headers: { authorization: 'Bearer qualquer' },
+      });
+      assert.equal(res.status, 403);
+      assert.deepEqual(await res.json(), { erro: 'Acesso restrito.' });
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        srv403.close((err) => (err ? reject(err) : resolve())),
+      );
+    }
   });
 });
