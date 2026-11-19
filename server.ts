@@ -50,7 +50,8 @@ async function criarRepositorioEVerificador(): Promise<{
     };
     const db = getFirestore(app);
 
-    const auth = (admin as unknown as { auth: (app?: unknown) => AuthLike }).auth(app);
+    const { obterAuthAdmin } = await import('./src/server/auth-admin');
+    const auth = (await obterAuthAdmin(app)) as AuthLike;
     return {
       repositorio: repositorioFirestore(db, prefixo),
       verificadorToken: verificadorFirebase(auth),

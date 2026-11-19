@@ -115,7 +115,8 @@ async function main(): Promise<void> {
 
   const email = process.env.SEED_ADMIN_EMAIL;
   if (email) {
-    const auth = (admin as unknown as { auth: (app?: unknown) => AdminAuthLike }).auth(app);
+    const { obterAuthAdmin } = await import('../src/server/auth-admin');
+    const auth = (await obterAuthAdmin(app)) as AdminAuthLike;
     await concederAdmin(auth, email);
   } else {
     console.log('[seed] SEED_ADMIN_EMAIL ausente: administrador não concedido.');
